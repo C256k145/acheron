@@ -8,30 +8,19 @@ use std::io::Write;
 mod listener;
 mod sender;
 
-// const MY_SOCKET: &str = "10.0.0.73:8888";
-// const REMOTE_SOCKET: &str = "10.0.0.61:8888";
-
 fn main() {
     print!("Enter remote ip: ");
     match io::stdout().flush() {
         Ok(_) => (),
         Err(e) => panic!("Printing to the screen failed lmao what: {}", e),
     };
+
     let (my_ip, remote_ip) = &get_ips();
-
     let (tx, rx) = mpsc::channel();
-    let socket = UdpSocket::bind(&my_ip).expect("Failed to create Socket");
-    socket.connect(&remote_ip).expect("couldnt connect to remote");
-    let res = socket.set_nonblocking(true);
+    let my_socket = &create_connection(&my_ip, &remote_ip).unwrap();
 
-    match res {
-        Ok(_) => (),
-        Err(e) => panic!("Couldn't unblock socket: {}", e),
-    }
-    let my_socket = socket;
-
-    let mut my_listener = listener::Listener::new(&my_socket, 1000);
-    let my_sender = sender::Sender::new(&my_socket);
+    let mut my_listener = listener::Listener::new(my_socket, 4096);
+    let my_sender = sender::Sender::new(my_socket);
 
     let input_thread = thread::spawn(move || loop {
         let mut input = String::new();
@@ -99,5 +88,15 @@ fn get_ips() -> (String, String) {
             return (local_ip, remote_ip);
         },
         Err(_) => return ("".to_string(), "".to_string()),
+    }
+}
+
+fn create_connection(my_ip: &str, remote_ip: &str) -> Result<UdpSocket, Box<dyn std::error::Error>> {
+    let socket = UdpSocket::bind(my_ip).expect("Failed to create Socket");
+    socket.connect(remote_ip).expect("couldnt connect to remote");
+    let res = socket.set_nonblocking(true);
+    match res {
+        Ok(_) => return Ok(socket),
+        Err(e) => panic!("Couldn't unblock socket: {}", e),
     }
 }
