@@ -5,8 +5,8 @@ use std::sync::mpsc;
 mod listener;
 mod sender;
 
-const MY_SOCKET: &str = "10.0.0.73:8888";
-const REMOTE_SOCKET: &str = "10.0.0.61:8888";
+const MY_SOCKET: &str = "127.0.0.1:3000";
+const REMOTE_SOCKET: &str = "127.0.0.1:3001";
 
 fn main() {
     let mut go = true;
@@ -20,7 +20,7 @@ fn main() {
     }
     let my_socket = socket;
 
-    let mut my_listener = listener::Listener::new(&my_socket, 100);
+    let mut my_listener = listener::Listener::new(&my_socket, 1000);
     let my_sender = sender::Sender::new(&my_socket);
 
     let input_thread = thread::spawn(move || loop {
@@ -49,8 +49,12 @@ fn main() {
         let msg = rx.try_recv();
         match msg {
             Ok(_) => {
-                print!("You :");
-                my_sender.send(&msg.unwrap(), REMOTE_SOCKET);
+                let msg = &msg;
+                if msg.as_ref().unwrap().len() > 1 {
+                    let msg = &msg;
+                    my_sender.send(msg.as_ref().unwrap(), REMOTE_SOCKET);
+                }
+                
             }
             Err(_) => (),
         }

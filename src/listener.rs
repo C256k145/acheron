@@ -17,7 +17,6 @@ impl<'a> Listener<'a> {
     }
 
     pub fn print_msg(&self) {
-        print!("Them: ");
         let msg = String::from_utf8_lossy(&self.buf);
         println!("{}", msg);
     }
