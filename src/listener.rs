@@ -22,14 +22,10 @@ impl<'a> Listener<'a> {
     }
 
     pub fn listen(&mut self) -> std::io::Result<bool> {
+        self.buf = vec![0; self.len];
         let res = self.local_socket.recv_from(&mut self.buf);
         match  res {
-            Ok(_) => {
-                        self.len = res.unwrap().0;
-                        let buf = &mut self.buf[..self.len];
-                        self.buf = buf.to_vec();
-                        return Ok(true);
-            },
+            Ok(_) => return Ok(true),
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 return Err(e);
             },
